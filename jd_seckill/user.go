@@ -7,9 +7,10 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/unknwon/goconfig"
 	"github.com/ztino/jd_seckill/common"
-	"log"
+	"github.com/ztino/jd_seckill/log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -57,7 +58,8 @@ func (this *User) QrLogin() (string,error) {
 	}
 	log.Println("二维码获取成功，请打开京东APP扫描")
 	dir,_:=os.Getwd()
-	common.OpenImage(dir+"/qr_code.png")
+	qrPath := filepath.Join(dir, `./qr_code.png`)
+	common.OpenImage(qrPath)
 	return wlfstkSmdl,nil
 }
 
@@ -83,6 +85,7 @@ func (this *User) TicketInfo(ticket string) (string,error) {
 	req.SetHeader("User-Agent",this.getUserAgent())
 	req.SetHeader("Referer","https://passport.jd.com/uc/login?ltype=logout")
 	resp,body,err:=req.SetUrl("https://passport.jd.com/uc/qrCodeTicketValidation?t="+ticket).SetMethod("get").Send().End()
+	defer this.DelQrCode()
 	if err!=nil || resp.StatusCode!=http.StatusOK {
 		log.Println("二维码信息校验失败")
 		return "",errors.New("二维码信息校验失败")
@@ -97,7 +100,12 @@ func (this *User) TicketInfo(ticket string) (string,error) {
 }
 
 func (this *User) RefreshStatus() error {
-	req:=httpc.NewRequest(this.client)
+	client:=httpc.NewHttpClient()
+	client.SetCookieJar(common.CookieJar)
+	client.SetRedirect(func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	})
+	req:=httpc.NewRequest(client)
 	req.SetHeader("User-Agent",this.getUserAgent())
 	resp,_,err:=req.SetUrl("https://order.jd.com/center/list.action?rid="+strconv.Itoa(int(time.Now().Unix()*1000))).SetMethod("get").Send().End()
 	if err==nil && resp.StatusCode==http.StatusOK {
@@ -128,4 +136,12 @@ func (this *User) GetUserInfo() (string,error) {
 	}
 	b,_:=common.GbkToUtf8([]byte(nickName))
 	return string(b), nil
+}
+
+func (this *User) DelQrCode() {
+	dir, _ := os.Getwd()
+	qrPath := filepath.Join(dir, `./qr_code.png`)
+	if common.Exists(qrPath) {
+		_=os.Remove(qrPath)
+	}
 }

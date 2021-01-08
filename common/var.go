@@ -5,14 +5,19 @@ import (
 	"github.com/unknwon/goconfig"
 )
 
-const SoftName = "jd_seckill"
+const (
+	SoftName          = "jd_seckill"
+	Version           = "0.2.1"
+	DateTimeFormatStr = "2006-01-02 15:04:05"
+	DateFormatStr     = "2006-01-02"
+)
 
-const Version = "0.1.6"
+var (
+	Client *httpc.HttpClient
 
-var Client *httpc.HttpClient
+	CookieJar *httpc.CookieJar
 
-var CookieJar *httpc.CookieJar
+	Config *goconfig.ConfigFile
 
-var Config *goconfig.ConfigFile
-
-var SeckillStatus chan bool
+	SeckillStatus chan bool
+)

@@ -5,20 +5,21 @@ import (
 	"github.com/unknwon/goconfig"
 	"github.com/ztino/jd_seckill/cmd"
 	"github.com/ztino/jd_seckill/common"
-	"log"
-	"net/http"
+	"github.com/ztino/jd_seckill/log"
 	"os"
 	"runtime"
 )
 
 func init()  {
+	//日志初始化
+	if !common.IsDir("./logs/") {
+		_ = os.Mkdir("./logs/", 0777)
+	}
+
 	//客户端设置初始化
 	common.Client=httpc.NewHttpClient()
 	common.CookieJar=httpc.NewCookieJar()
 	common.Client.SetCookieJar(common.CookieJar)
-	common.Client.SetRedirect(func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	})
 
 	//配置文件初始化
 	confFile:="./conf.ini"
